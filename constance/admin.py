@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from datetime import datetime, date, time
 from decimal import Decimal
 import hashlib
@@ -42,6 +44,7 @@ FIELDS = {
     date: (fields.DateField, {'widget': widgets.AdminDateWidget}),
     time: (fields.TimeField, {'widget': widgets.AdminTimeWidget}),
     float: (fields.FloatField, {'widget': NUMERIC_WIDGET}),
+    'select': (fields.CharField, {'widget': forms.Select})
 }
 
 
@@ -84,6 +87,13 @@ class ConstanceForm(forms.Form):
             else:
                config_type = type(default)
 
+            # Get field kwargs if third parameter is dict
+            if isinstance(config_type, dict):
+                widget_kwargs = deepcopy(config_type)
+                config_type = widget_kwargs.pop('field_type')
+            else:
+                widget_kwargs = {}
+
             if config_type not in FIELDS:
                 raise ImproperlyConfigured(_("Constance doesn't support "
                                              "config values of the type "
@@ -92,7 +102,13 @@ class ConstanceForm(forms.Form):
                                            % {'config_type': config_type,
                                               'name': name})
             field_class, kwargs = FIELDS[config_type]
+            kwargs = deepcopy(kwargs)
+
+            if widget_kwargs:
+                kwargs['widget'] = kwargs['widget'](**widget_kwargs)
+
             self.fields[name] = field_class(label=name, **kwargs)
+
 
             version_hash.update(smart_bytes(initial.get(name, '')))
         self.initial['version'] = version_hash.hexdigest()
