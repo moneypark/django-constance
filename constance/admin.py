@@ -102,6 +102,7 @@ class ConstanceForm(forms.Form):
                                            % {'config_type': config_type,
                                               'name': name})
             field_class, kwargs = FIELDS[config_type]
+            # Make copy, as we can initialize widget and need to not corrupt global config (see FIELDS)
             kwargs = deepcopy(kwargs)
 
             if widget_kwargs:
